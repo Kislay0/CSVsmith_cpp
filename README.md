@@ -1,169 +1,141 @@
+# CSVsmith_cpp — README.md
 
-============================================================
-                       CSV-Smith
-        A lightweight C++ CSV manipulation toolkit
-============================================================
+> A lightweight C++17 CSV manipulation toolkit
 
-CSV-Smith is a small and practical C++ utility designed for
-loading CSV files, modifying the data in memory, applying
-transformations, and exporting the results as a new CSV file.
-It provides a simple API that supports row/column operations,
-sorting, date-format conversion, merging CSV files, and
-conditional filtering through callback functions.
+![status-badge](https://img.shields.io/badge/status-active-brightgreen) ![lang-badge](https://img.shields.io/badge/C%2B%2B-17-blue)
 
-This project is intended as a compact, easy-to-understand
-example of C++17 programming focused on file I/O, STL usage,
-and data manipulation.
+## Overview
 
-------------------------------------------------------------
-Features
-------------------------------------------------------------
-• Load CSV files into an in-memory table representation
-• Access or modify any cell value
-• Add, delete, and insert rows
-• Delete columns or individual cells
-• Sort rows by a selected column (numeric or lexicographic)
-• Convert date formats across a column or a single cell
-• Merge multiple CSV files into one dataset
-• Remove rows using user-defined callback logic
-• Save processed data into a new CSV file
+CSV-Smith is a small, practical C++ utility for loading CSV files, transforming data in-memory, and exporting results to a new CSV. It focuses on clarity and approachability while covering common tabular operations.
 
-------------------------------------------------------------
-Build Instructions
-------------------------------------------------------------
-Requirements:
-  - GNU g++ compiler
-  - make
+**Highlights**
 
-Build:
-  make
+* Load CSVs into an in-memory table
+* Access/modify any cell value
+* Add/insert/delete rows and columns
+* Sort rows (numeric or lexicographic)
+* Convert date formats (per cell or per column)
+* Merge multiple CSV files
+* Filter rows via user callbacks
+* Save results back to CSV
 
-Clean build artifacts:
-  make clean
+## Getting Started
 
-------------------------------------------------------------
-Quick Example (conceptual)
-------------------------------------------------------------
-// Load file
-CSVData data("input.csv");
+### Requirements
 
-// Edit a cell
-data.set_value(0, 1, "updated");
+* C++17-compatible compiler (e.g., `g++`)
+* `make`
 
-// Remove a row
-data.delete_row(2);
+### Build
 
-// Sort by column 0
-data.sort_by_col(0, CSVData::ACS);
+```bash
+make           # builds examples and library
+make clean     # removes build artifacts
+```
 
-// Save result
-data.write_data("output.csv");
+### Quick Start
 
-------------------------------------------------------------
-Core API Overview
-------------------------------------------------------------
-Constructors:
-  CSVData();
-  CSVData("file.csv");
-  CSVData(const CSVData& other);
+```cpp
+#include "csv_data_manipulator.hpp"
+using namespace std;
 
-Information methods:
-  data.is_modified();
-  data.is_unified();
-  data.rows();
-  data.columns();
+int main(){
+  CSVData data("input.csv");           // load file
+  data.set_value(0, 1, "updated");     // edit a cell
+  data.delete_row(2);                   // remove a row
+  data.sort_by_col(0, CSVData::ACS);    // sort by column 0 (ascending)
+  data.write_data("output.csv");       // save
+}
+```
 
-Cell/Row/Column operations:
-  data.get_value(r, c);
-  data.set_value(r, c, value);
-  data.add_row(vector<string>);
-  data.add_row(vector<string>, position);
-  data.delete_row(r);
-  data.delete_col(c);
-  data.delete_item(r, c);
+### Command-line Examples (in `examples/`)
 
-File operations:
-  data.read_file("file.csv");
-  data.write_data("out.csv");
-  data.append_file("more.csv");
+```bash
+# Convert date column format
+./example_1 -i file.csv -f 3
 
-Date formatting:
-  data.convert_date_format(old_fmt, new_fmt, col);
-  data.convert_date_format(old_fmt, new_fmt, row, col);
+# Keep rows with custom condition
+./example_2 -i file.csv
 
-Sorting:
-  data.sort_by_col(col, CSVData::ACS);
-  data.sort_by_col(col, CSVData::DECS);
+# Sort by a specific column
+./example_3 -i file.csv -c 0
 
-------------------------------------------------------------
-Filtering Rows with delete_row_if
-------------------------------------------------------------
-You can remove rows based on custom callback logic.
-The callback receives row/col info and the cell value.
+# Merge two CSV files
+./example_4 -i file1.csv -a file2.csv
 
-Example:
-bool remove_even_ids(int row, int col, const string& value) {
-    if (col == 0) {
-        int v = atoi(value.c_str());
-        return (v > 0 && v % 2 == 0);
-    }
-    return false;
+# Remove duplicate rows
+./example_5
+```
+
+## Core API (glance)
+
+```cpp
+// constructors
+CSVData();
+CSVData(const std::string& file);
+CSVData(const CSVData& other);
+
+// info
+bool is_modified() const;
+bool is_unified() const;
+size_t rows() const; size_t columns() const;
+
+// cell/row/column ops
+std::string get_value(size_t r, size_t c) const;
+void set_value(size_t r, size_t c, const std::string& v);
+void add_row(const std::vector<std::string>& row);
+void add_row(const std::vector<std::string>& row, size_t pos);
+void delete_row(size_t r);
+void delete_col(size_t c);
+void delete_item(size_t r, size_t c);
+
+// file ops
+void read_file(const std::string& file);
+void write_data(const std::string& file) const;
+void append_file(const std::string& file);
+
+// date formatting
+void convert_date_format(const std::string& from, const std::string& to, size_t col);
+void convert_date_format(const std::string& from, const std::string& to, size_t row, size_t col);
+
+// sorting
+enum Order { ACS, DECS };
+void sort_by_col(size_t col, Order order);
+```
+
+### Row Filtering via Callback
+
+```cpp
+bool remove_even_ids(int row, int col, const std::string& value) {
+  if (col == 0) {
+    int v = std::atoi(value.c_str());
+    return (v > 0 && v % 2 == 0);
+  }
+  return false;
 }
 
 CSVData d("file.csv");
 d.delete_row_if(remove_even_ids);
+```
 
-Several callback signatures are supported:
-  (row, col, value)
-  (row, col, value, cbData)
-  (row, row_vector, cbData)
+> Supported callback signatures include `(row, col, value)`, `(row, col, value, cbData)`, and `(row, row_vector, cbData)`.
 
-------------------------------------------------------------
-Examples (in the /examples directory)
-------------------------------------------------------------
-Example 1:
-  Convert a date column to a new format.
-  ./example_1 -i file.csv -f 3
+## Notes
 
-Example 2:
-  Keep rows with custom conditions.
-  ./example_2 -i file.csv
+* All indices are zero-based.
+* Sorting attempts numeric comparison first; falls back to lexicographic.
+* Examples compile individually via `make`.
 
-Example 3:
-  Sort data by a specific column.
-  ./example_3 -i file.csv -c 0
+## Roadmap / Ideas
 
-Example 4:
-  Merge two CSV files.
-  ./example_4 -i file1.csv -a file2.csv
+* Aggregations: sum/avg/min/max, group-by
+* Richer CLI for bulk transforms
+* Better error handling and logging
 
-Example 5:
-  Remove duplicate rows.
-  ./example_5
+## Contributing
 
-------------------------------------------------------------
-Notes
-------------------------------------------------------------
-• All indices are zero-based.
-• Sorting attempts numeric comparison first.
-• delete_row_if can operate per-cell or per-row.
-• Examples must be compiled individually using make.
+PRs and issues are welcome. Please keep the API simple and the examples approachable.
 
-------------------------------------------------------------
-About this Project
-------------------------------------------------------------
-CSV-Smith focuses on clarity and approachability.
-It is suitable for:
-  - learning file I/O in C++
-  - exploring STL usage
-  - understanding tabular data operations
-  - building small command-line tools
+<!-- ## License
 
-You are free to extend it with:
-  - more analytics (sum, average, group-by)
-  - a richer command-line interface
-  - error handling improvements
-  - additional row/column operations
-
-============================================================
-
+*Add a license file (e.g., MIT, Apache-2.0) to clarify usage.* -->
