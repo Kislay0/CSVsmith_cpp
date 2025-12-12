@@ -1,52 +1,70 @@
-#include <iostream>
-#include "../csv_data_manipulator.hpp"
+#ifndef CSV_DATA_MANIPULATOR
+#define CSV_DATA_MANIPULATOR
 
-using namespace std;
+#include <vector>
+#include <functional>
 
-int valid_arguments(int argc, char const* argv[])
-{
-    if (argc < 3) {
-        cerr << "Usage: " << argv[0] << " -i <filename>.csv" << endl;
-        return 0;
-    }
+class CSVData {
+    public:
+        CSVData();
+        CSVData(CSVData &rhs);
+        CSVData(const std::string &filename);
+        ~CSVData() {  }
 
-    if (string(argv[1]) == "-i") {
-        string filename = string(argv[2]);
+        bool is_modified() { return m_is_modified; }
+        bool is_unified() { return m_is_unified; }
+        int  columns() { return m_cols; }
+        int  rows() { return m_rows; }
 
-        if (filename.find_last_of(".csv") == string::npos) {
-             cerr << "Supported filenames: <filename>.csv" << endl;
-             return 0;
-        }
-    } else {
-        cerr << "Invalid parameters." << endl << "Usage: " << argv[0] << " -i <filename.csv>" << endl;
-        return 0;
-    }
+        const std::string get_value(int row, int col);
+        const std::vector<std::string> get_row(int row);
+        void set_value(int row, int col, std::string value);
 
-    return 1;
-}
+        void add_row(std::vector<std::string> row_data);
+        void add_row(std::vector<std::string> row_data, int pos);
+        void delete_row(int row);
+        void delete_col(int col);
+        void delete_item(int row, int col);
+        void delete_row_if(std::function<bool(int, int, const std::string&)> cbFun);
+        void delete_row_if(std::function<bool(int, int, const std::string&, void *cbData)> cbFun, void *cbData);
+        void delete_row_if(std::function<bool(int, const std::vector< std::string > &, void *cbData)> cbFun, void *cbData);
 
-bool id_is_even(int row, int col, const string &val)
-{
-    int i_val = atoi( val.c_str() );
-    if ( col == 0 && i_val > 0 && i_val % 2 == 0 ) return true;
-    return false;
-}
+        void read_file(const std::string &filename);
+        void append_file(const std::string &filename);
+        void write_data(const std::string &filename);
 
-int main(int argc, char const* argv[])
-{
-    if (!valid_arguments(argc, argv)) return 1;
+        void convert_date_format(const std::string &old_format, const std::string &new_format, int column);
+        void convert_date_format(const std::string &old_format, const std::string &new_format, int row, int column);
 
-    string filename = string(argv[2]);
+        const char* get_version() { return VERSION; }
 
-    CSVData csv_data(filename);
+        void sort_by_col(int col, int order);
+        void make_data_unique();
 
-    csv_data.delete_row_if(id_is_even);
+        // --- PUBLIC CONSTANTS --- //
+        static const int ASC;
+        static const int DESC;
 
-    string new_filename = string(filename);
-    size_t last_dot = new_filename.find_last_of(".");
-    new_filename.replace(last_dot, 1, "_new.");
+    private:
+        std::vector< std::vector<std::string> > m_data;
 
-    csv_data.write_data(new_filename);
+        bool m_is_modified;
+        bool m_is_unified;
+        int m_rows;
+        int m_cols;
 
-    return 0;
-}
+        // --- CONSTANTS --- //
+        static const char *VERSION;
+        static const char CSV_DELIMITER;
+        static const char C_STRING_DELIMITER;
+        static const char *S_STRING_DELIMITER;
+        static const char *TMP_DELIM_REPLACEMENT;
+        static const char DECIMAL_DELIMITER;
+
+        // --- private functions --- //
+        void _read_file(const std::string &filename, std::vector< std::vector<std::string> > &target, int &cols);
+        void _append_data(std::vector< std::vector<std::string> > &data);
+
+}; // CSVData
+
+#endif /* CSV_DATA_MANIPULATOR */
